@@ -11,7 +11,7 @@ def find_thoughput(json_str):
 
 
 @app.post("/run-iperf")
-async def run_iperf(server_ip: str = Query(..., description="Server IP address"), duration: int = Query(..., description="Duration in seconds")):
+async def run_iperf(server_ip: str , duration: int ):
     try:
         # Construct the iperf command
         iperf_command = f"iperf3 -c {server_ip} -t {duration} -p 5000i --json"
