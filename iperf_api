@@ -1,0 +1,32 @@
+from fastapi import FastAPI, Query
+from subprocess import Popen, PIPE
+import json
+
+app = FastAPI()
+
+def find_thoughput(json_str):
+    data = json.loads(json_str)
+    output = data["end"]["sum_received"]['bits_per_second']
+    return output
+
+
+@app.post("/run-iperf")
+async def run_iperf(server_ip: str = Query(..., description="Server IP address"), duration: int = Query(..., description="Duration in seconds")):
+    try:
+        # Construct the iperf command
+        iperf_command = f"iperf3 -c {server_ip} -t {duration} -p 5000i --json"
+        # Run iperf and capture the output
+        process = Popen(iperf_command, shell=True, stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+
+        # Check if iperf ran successfully
+        if process.returncode == 0:
+            output_lines = stdout.decode()
+            bps_received =  find_thoughput(output_lines)
+
+
+            return {"server_ip": server_ip, "duration": duration, "bps_received": bps_received}
+        else:
+            return {"error": "iperf execution failed", "stderr": stderr.decode()}
+    except Exception as e:
+        return {"error": str(e)}
